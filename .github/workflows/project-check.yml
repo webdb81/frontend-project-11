@@ -1,0 +1,18 @@
+name: project-check
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Cloning Repo
+      - uses: actions/checkout@v3
+      # Installing Node.js
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          cache: "npm" # Speeding up project rebuilds
+      # Installing dependencies
+      - run: npm install
+      # Running lint
+      - name: run lint
+        run: make lint
