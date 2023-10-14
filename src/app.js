@@ -1,6 +1,5 @@
 import * as yup from 'yup';
 import onChange from 'on-change';
-import _ from 'lodash';
 import i18nInstance from './utils.js';
 import render from './view.js';
 
