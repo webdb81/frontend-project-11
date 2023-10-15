@@ -9,10 +9,10 @@ export default {
     postsTitle: 'Posts',
     modalOpen: 'Preview',
     successLoad: 'RSS successfully loaded',
-    modalRef: 'Read more',
+    modalReadMore: 'Read more',
     modalClose: 'Close',
     errors: {
-      Required: 'Do not empty',
+      Required: 'The field should not be empty',
       ParsingError: 'Link does not contain valid RSS',
       Incorrecturl: 'Link must be valid URL',
       LinkAlreadyAdded: 'RSS already exists',

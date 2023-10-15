@@ -1,1 +1,6 @@
 @import "~bootstrap/scss/bootstrap";
+
+.text-muted {
+  --bs-text-opacity: 1;
+  color: var(--bs-secondary) !important;
+}

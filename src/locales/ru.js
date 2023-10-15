@@ -9,10 +9,10 @@ export default {
     postsTitle: 'Посты',
     modalOpen: 'Просмотр',
     successLoad: 'RSS успешно загружен',
-    modalRef: 'Читать полностью',
+    modalReadMore: 'Читать полностью',
     modalClose: 'Закрыть',
     errors: {
-      Required: 'Не должно быть пустым',
+      Required: 'Поле не должно быть пустым',
       ParsingError: 'Ресурс не содержит валидный RSS',
       Incorrecturl: 'Ссылка должна быть валидным URL',
       LinkAlreadyAdded: 'RSS уже существует',
