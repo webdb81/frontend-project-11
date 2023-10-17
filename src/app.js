@@ -88,8 +88,8 @@ export default () => {
               .then((response) => {
                 const rssData = response.data.contents;
                 const parsingResults = parser(rssData);
-                const { rssNodeTitle, rssNodeDescription, posts } = parsingResults;
-                // const { rssNodeTitle, posts } = parsingResults;
+                // const { rssNodeTitle, rssNodeDescription, posts } = parsingResults;
+                const { rssNodeTitle, posts } = parsingResults;
 
                 const newPosts = _.differenceWith(posts, initialState.posts, (a, b) => a.title === b.title);
                 const updatedPosts = newPosts.map((post) => {
