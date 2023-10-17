@@ -9,16 +9,15 @@ import resources from './locales/resources.js';
 
 export default () => {
   const initialState = {
-    feeds: [], // Массив лент (объекты с информацией о лентах)
-    posts: [], // Массив постов (объекты с информацией о постах)
+    feeds: [],
+    posts: [],
     formRss: {
-      error: null, // Ошибка формы, если есть
-      valid: false, // Валидность формы (по умолчанию невалидна)
+      error: null,
+      valid: false,
     },
-    language: '',
-    modalPost: null, // Идентификатор отображаемого модального поста (по умолчанию null)
-    viewPosts: [], // Массив идентификаторов просматриваемых постов
-    connectionMode: 'detach', // Состояние загрузки (по умолчанию 'ok')
+    modalPost: null,
+    viewPosts: [],
+    connectionMode: 'detach',
   };
 
   const elements = {
@@ -28,11 +27,12 @@ export default () => {
     feedback: document.querySelector('.feedback'),
     feedsContainer: document.querySelector('.feeds'),
     postsContainer: document.querySelector('.posts'),
+    modalPostTitle: document.querySelector('.modal-title'),
+    modalPostText: document.querySelector('.modal-body'),
+    modalPostLink: document.querySelector('.full-article'),
   };
 
   const i18n = i18next.createInstance();
-
-  const watchedState = watcher(initialState, elements, i18n);
 
   i18n
     .init({
@@ -43,31 +43,36 @@ export default () => {
     .then(() => {
       yup.setLocale({
         string: {
-          url: () => ({ key: 'errors.IncorrectUrl', validationError: true }),
+          url: { key: 'errors.IncorrectUrl', validationError: true },
         },
         mixed: {
           required: () => ({ key: 'errros.Required', validationError: true }),
-          notOneOf: () => ({ key: 'errors.LinkAlreadyAdded', validationError: true }),
+          notOneOf: () => ({
+            key: 'errors.RssAlreadyAdded',
+            validationError: true,
+          }),
         },
       });
 
-      const validateUrl = (url, feeds) => {
-        const schema = yup.string().required().url().notOneOf(feeds);
+      const validateUrl = (url, RssAlreadyAdded) => {
+        const schema = yup.string().required().url().notOneOf(RssAlreadyAdded);
 
         return schema.validate(url);
       };
+
+      const watchedState = watcher(initialState, elements, i18n);
 
       const errorHandler = (error) => {
         if (error.message.validationError) {
           console.log(error.message);
           watchedState.formRss = {
             valid: false,
-            error,
+            error: error.message.key,
           };
-        } else if (error.message.parsingError) {
+        } else if (error.isParsingError) {
           watchedState.formRss = {
             valid: false,
-            error,
+            error: 'errors.parsingError',
           };
         }
       };
@@ -79,36 +84,38 @@ export default () => {
         return href;
       };
 
+      const refreshPostsInterval = 5000;
       const refreshPosts = () => {
-        const handleRefresh = () => {
-          const promises = initialState.feeds.map((feed) => {
-            const feedUrl = feed.url;
-            return axios
-              .get(getProxyUrl(feedUrl))
-              .then((response) => {
-                const rssData = response.data.contents;
-                const parsingResults = parser(rssData);
-                // const { rssNodeTitle, rssNodeDescription, posts } = parsingResults;
-                const { rssNodeTitle, posts } = parsingResults;
+        const promises = initialState.feeds.map((feed) => {
+          const feedUrl = feed.url;
+          return axios
+            .get(getProxyUrl(feedUrl))
+            .then((response) => {
+              const rssData = response.data.contents;
+              const parsingResults = parser(rssData);
+              const { posts } = parsingResults;
 
-                const newPosts = _.differenceWith(posts, initialState.posts, (a, b) => a.title === b.title);
-                const updatedPosts = newPosts.map((post) => {
-                  post.id = _.uniqueId();
-                  post.feedId = feed.id;
-                  return post;
-                });
-                initialState.posts.unshift(...updatedPosts);
-                console.log(`rssNodeTitle: ${rssNodeTitle}`);
-              })
-              .catch((error) => {
-                console.error(error);
+              const newPosts = _.differenceWith(
+                posts,
+                initialState.posts,
+                (a, b) => a.title === b.title,
+              );
+              const updatedPosts = newPosts.map((post) => {
+                const updatedPost = { ...post };
+                updatedPost.id = _.uniqueId();
+                updatedPost.feedId = feed.id;
+                return updatedPost;
               });
-          });
+              initialState.posts.unshift(...updatedPosts);
+            })
+            .catch((error) => {
+              console.error(error);
+            });
+        });
 
-          return Promise.all(promises);
-        };
-
-        setTimeout(handleRefresh, 5000);
+        Promise.all(promises).finally(() => {
+          setTimeout(() => refreshPosts(), refreshPostsInterval);
+        });
       };
 
       refreshPosts(initialState);
@@ -122,15 +129,13 @@ export default () => {
         validateUrl(url, existingLinks)
           .then(() => {
             watchedState.connectionMode = 'load';
-            watchedState.formRss.valid = true;
+            watchedState.formRss = { valid: true, error: null };
             return axios.get(getProxyUrl(url));
           })
           .then((response) => {
             const rssData = response.data.contents;
             const parsingResults = parser(rssData);
-            // console.log(`parsingResults: ${parsingResults}`);
             const { rssNodeTitle, rssNodeDescription, posts } = parsingResults;
-            // console.log(`posts: ${posts}`);
             const feed = {
               url,
               id: _.uniqueId(),
@@ -153,6 +158,14 @@ export default () => {
           .catch((error) => {
             errorHandler(error);
           });
+      });
+      elements.postsContainer.addEventListener('click', (e) => {
+        const { target } = e;
+        const id = target.getAttribute('data-id');
+        if (id) {
+          watchedState.modalPost = id;
+          watchedState.viewPosts.push(id);
+        }
       });
     });
 };

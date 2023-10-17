@@ -15,7 +15,7 @@ export default {
       Required: 'The field should not be empty',
       ParsingError: 'Link does not contain valid RSS',
       IncorrectUrl: 'Link must be valid URL',
-      LinkAlreadyAdded: 'RSS already exists',
+      RssAlreadyAdded: 'RSS already exists',
       NetworkError: 'Network error',
     },
   },

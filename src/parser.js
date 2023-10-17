@@ -6,6 +6,7 @@ const parser = (RSS) => {
   if (parseError) {
     const parseErrorText = parseError.textContent;
     const parseErrorOutput = new Error(`XML parsing error: ${parseErrorText}`);
+    parseErrorOutput.isParsingError = true;
     throw parseErrorOutput;
   }
 
@@ -23,6 +24,7 @@ const parser = (RSS) => {
     link: post.querySelector('link').textContent.trim(),
   }));
   console.log({ rssNodeTitle, rssNodeDescription, posts });
+
   return { rssNodeTitle, rssNodeDescription, posts };
 };
 

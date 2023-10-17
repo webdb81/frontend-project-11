@@ -1,26 +1,28 @@
-/* eslint-disable default-case */
 import onChange from 'on-change';
 
 const handlingForm = (initialState, elements, i18n) => {
-  const updateElements = { ...elements };
+  const currentElements = { ...elements };
 
   if (initialState.formRss.error) {
-    updateElements.feedback.classList.add('text-danger');
-    updateElements.feedback.classList.remove('text-success');
-    updateElements.feedback.textContent = i18n.t(initialState.formRss.error);
+    currentElements.feedback.classList.add('text-danger');
+    currentElements.feedback.classList.remove('text-success');
+    currentElements.feedback.textContent = i18n.t(initialState.formRss.error);
   }
   if (initialState.formRss.valid) {
-    updateElements.inputUrl.classList.remove('is-invalid');
+    currentElements.inputUrl.classList.remove('is-invalid');
   } else {
-    updateElements.inputUrl.classList.add('is-invalid');
+    currentElements.inputUrl.classList.add('is-invalid');
   }
-  return updateElements;
+
+  return currentElements;
 };
 
-const handlingFeeds = (initialState, elements) => {
+const handlingFeeds = (initialState, elements, i18n) => {
   console.log('Feeds:', initialState.feeds);
   console.log('Posts:', initialState.posts);
-  elements.feedsContainer.innerHTML = '';
+  const currentElements = { ...elements };
+
+  currentElements.feedsContainer.innerHTML = '';
   const feedsWrap = document.createElement('div');
   feedsWrap.classList.add('card', 'border-0');
 
@@ -30,7 +32,7 @@ const handlingFeeds = (initialState, elements) => {
 
   const feedsTitle = document.createElement('h2');
   feedsTitle.classList.add('card-title', 'h4');
-  feedsTitle.textContent = 'Фиды';
+  feedsTitle.textContent = i18n.t('feedsTitle');
   feedsBody.append(feedsTitle);
 
   const feedsList = document.createElement('ul');
@@ -51,14 +53,17 @@ const handlingFeeds = (initialState, elements) => {
     feedItemText.textContent = feed.description;
     feedItem.append(feedItemTitle, feedItemText);
   });
+  currentElements.feedsContainer.append(feedsWrap);
 
-  elements.feedsContainer.append(feedsWrap);
+  return currentElements;
 };
 
-const handlingPosts = (initialState, elements) => {
+const handlingPosts = (initialState, elements, i18n) => {
   //  console.log('Feeds:', initialState.feeds);
   // console.log('Posts:', initialState.posts);
-  elements.postsContainer.innerHTML = '';
+  const currentElements = { ...elements };
+
+  currentElements.postsContainer.innerHTML = '';
 
   const postsWrap = document.createElement('div');
   postsWrap.classList.add('card', 'border-0');
@@ -69,7 +74,7 @@ const handlingPosts = (initialState, elements) => {
 
   const postsTitle = document.createElement('h2');
   postsTitle.classList.add('card-title', 'h4');
-  postsTitle.textContent = 'Посты';
+  postsTitle.textContent = i18n.t('postsTitle');
   postsBody.append(postsTitle);
 
   const postsList = document.createElement('ul');
@@ -88,30 +93,45 @@ const handlingPosts = (initialState, elements) => {
     );
 
     const postItemLink = document.createElement('a');
+
     postItemLink.textContent = post.title;
     postItemLink.setAttribute('href', post.link);
-    postItemLink.setAttribute('data-id', post.id);
+    postItemLink.setAttribute('id', post.id);
     postItemLink.setAttribute('target', '_blank');
 
-    if (initialState.viewPosts.includes(post.postId)) {
+    if (initialState.viewPosts.includes(post.id)) {
       postItemLink.classList.add('fw-normal', 'link-secondary');
     } else {
-      postItemLink.classList.add('fw-blod');
+      postItemLink.classList.add('fw-bold');
     }
 
     const modalOpen = document.createElement('button');
     modalOpen.type = 'button';
     modalOpen.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-    modalOpen.setAttribute('data-id', post.postId);
+    modalOpen.setAttribute('data-id', post.id);
     modalOpen.setAttribute('data-bs-toggle', 'modal');
     modalOpen.setAttribute('data-bs-target', '#modal');
-    modalOpen.textContent = 'Просмотр';
+    modalOpen.textContent = i18n.t('modalOpen');
 
     postItem.append(postItemLink, modalOpen);
     postsList.append(postItem);
   });
+  currentElements.postsContainer.append(postsWrap);
 
-  elements.postsContainer.append(postsWrap);
+  return currentElements;
+};
+
+const handlingModal = (initialState, elements) => {
+  console.log('ololo');
+  const currentElements = { ...elements };
+
+  const postModalPreview = initialState.posts.find((post) => post.id === initialState.modalPost);
+
+  currentElements.modalPostLink.setAttribute('href', postModalPreview.link);
+  currentElements.modalPostTitle.textContent = postModalPreview.title;
+  currentElements.modalPostText.textContent = postModalPreview.description;
+
+  return currentElements;
 };
 
 export default (initialState, elements, i18n) => {
@@ -133,6 +153,12 @@ export default (initialState, elements, i18n) => {
         handlingPosts(initialState, elements, i18n);
         break;
       }
+      case 'modalPost': {
+        handlingModal(initialState, elements);
+        break;
+      }
+      default:
+        throw new Error('Something went wrong.');
     }
   });
 
