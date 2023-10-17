@@ -1,111 +1,158 @@
+/* eslint-disable max-len */
 import * as yup from 'yup';
-import onChange from 'on-change';
-import _ from 'lodash';
+import _ from 'lodash'; //
 import axios from 'axios';
-import i18nInstance from './utils.js';
-import { appRender, rssRender } from './view.js';
+import i18next from 'i18next';
+import watcher from './view.js';
+import parser from './parser.js';
+import resources from './locales/resources.js';
 
 export default () => {
-  console.log('Hello World!');
-
   const initialState = {
+    feeds: [], // Массив лент (объекты с информацией о лентах)
+    posts: [], // Массив постов (объекты с информацией о постах)
     formRss: {
-      valid: true,
-      errors: '',
-      url: '',
-      buttonSubmitDisable: false,
+      error: null, // Ошибка формы, если есть
+      valid: false, // Валидность формы (по умолчанию невалидна)
     },
-    feeds: [],
     language: '',
+    modalPost: null, // Идентификатор отображаемого модального поста (по умолчанию null)
+    viewPosts: [], // Массив идентификаторов просматриваемых постов
+    connectionMode: 'detach', // Состояние загрузки (по умолчанию 'ok')
   };
 
-  const feedsState = {
-    feedsTitles: [],
-    feedsPosts: [],
-    postsCounter: 0,
+  const elements = {
+    formRss: document.querySelector('.rss-form'),
+    inputUrl: document.querySelector('#url-input'),
+    buttonSubmit: document.querySelector('button[type="submit"]'),
+    feedback: document.querySelector('.feedback'),
+    feedsContainer: document.querySelector('.feeds'),
+    postsContainer: document.querySelector('.posts'),
   };
 
-  const feeds = onChange(feedsState, rssRender());
-  const state = onChange(initialState, appRender());
+  const i18n = i18next.createInstance();
 
-  const makeParse = (data) => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(data, 'text/xml');
-    const errorNode = doc.querySelector('parsererror');
-    return errorNode ? 'error' : doc;
-  };
+  const watchedState = watcher(initialState, elements, i18n);
 
-  const makeRSS = (html, url) => {
-    if (html !== 'error') {
-      console.log(html);
-      state.formRss.errors = 'noerror';
-      state.formRss.valid = true;
-      state.feeds.push(url);
-      const feedId = _.uniqueId();
-      const titleElement = html.querySelector('channel > title');
-      const title = titleElement.textContent;
-      const descriptionElement = html.querySelector('channel > description');
-      const description = descriptionElement.textContent;
-      feeds.feedsTitles.push({ feedId, title, description });
-      console.log(feeds.feedsTitles);
+  i18n
+    .init({
+      debug: true,
+      lng: 'ru',
+      resources,
+    })
+    .then(() => {
+      yup.setLocale({
+        string: {
+          url: () => ({ key: 'errors.IncorrectUrl', validationError: true }),
+        },
+        mixed: {
+          required: () => ({ key: 'errros.Required', validationError: true }),
+          notOneOf: () => ({ key: 'errors.LinkAlreadyAdded', validationError: true }),
+        },
+      });
 
-      const items = [...html.querySelectorAll('item')];
-      const posts = items.map((item) => {
-        const postTitleElement = item.querySelector('title');
-        const postTitle = postTitleElement.textContent;
-        const postLinkElement = item.querySelector('link');
-        const postLink = postLinkElement.textContent;
-        feeds.postsCounter += 1;
-        const postId = feeds.postsCounter;
-        return {
-          feedId, postTitle, postLink, postId,
+      const validateUrl = (url, feeds) => {
+        const schema = yup.string().required().url().notOneOf(feeds);
+
+        return schema.validate(url);
+      };
+
+      const errorHandler = (error) => {
+        if (error.message.validationError) {
+          console.log(error.message);
+          watchedState.formRss = {
+            valid: false,
+            error,
+          };
+        } else if (error.message.parsingError) {
+          watchedState.formRss = {
+            valid: false,
+            error,
+          };
+        }
+      };
+
+      const getProxyUrl = (url) => {
+        const href = new URL('/get', 'https://allorigins.hexlet.app');
+        href.searchParams.set('url', url);
+        href.searchParams.set('disableCache', 'true');
+        return href;
+      };
+
+      const refreshPosts = () => {
+        const handleRefresh = () => {
+          const promises = initialState.feeds.map((feed) => {
+            const feedUrl = feed.url;
+            return axios
+              .get(getProxyUrl(feedUrl))
+              .then((response) => {
+                const rssData = response.data.contents;
+                const parsingResults = parser(rssData);
+                const { rssNodeTitle, rssNodeDescription, posts } = parsingResults;
+                // const { rssNodeTitle, posts } = parsingResults;
+
+                const newPosts = _.differenceWith(posts, initialState.posts, (a, b) => a.title === b.title);
+                const updatedPosts = newPosts.map((post) => {
+                  post.id = _.uniqueId();
+                  post.feedId = feed.id;
+                  return post;
+                });
+                initialState.posts.unshift(...updatedPosts);
+                console.log(`rssNodeTitle: ${rssNodeTitle}`);
+              })
+              .catch((error) => {
+                console.error(error);
+              });
+          });
+
+          return Promise.all(promises);
         };
+
+        setTimeout(handleRefresh, 5000);
+      };
+
+      refreshPosts(initialState);
+
+      elements.formRss.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const url = formData.get('url');
+        const existingLinks = initialState.feeds.map((feed) => feed.url);
+
+        validateUrl(url, existingLinks)
+          .then(() => {
+            watchedState.connectionMode = 'load';
+            watchedState.formRss.valid = true;
+            return axios.get(getProxyUrl(url));
+          })
+          .then((response) => {
+            const rssData = response.data.contents;
+            const parsingResults = parser(rssData);
+            // console.log(`parsingResults: ${parsingResults}`);
+            const { rssNodeTitle, rssNodeDescription, posts } = parsingResults;
+            // console.log(`posts: ${posts}`);
+            const feed = {
+              url,
+              id: _.uniqueId(),
+              title: rssNodeTitle,
+              description: rssNodeDescription,
+            };
+
+            const post = posts.map((item) => ({
+              ...item,
+              feedId: feed.id,
+              id: _.uniqueId(),
+            }));
+
+            watchedState.feeds.unshift(feed);
+            watchedState.posts.unshift(...post);
+
+            watchedState.connectionMode = 'detach';
+            watchedState.formRss = { error: null, valid: true };
+          })
+          .catch((error) => {
+            errorHandler(error);
+          });
       });
-
-      feeds.feedsPosts.push(...posts);
-      console.log(feeds.feedsPosts);
-    } else {
-      state.formRss.errors = i18nInstance.t('errors.ParsingError');
-    }
-  };
-
-  const schema = yup.string().required().url('incorrect url').notOneOf(state.feeds, 'Link already added');
-
-  const makeRequest = (url) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${url}`)
-    .catch(() => {
-      state.formRss.errors = i18nInstance.t('errors.NetworkError');
-      throw Error('Networkerror');
     });
-
-  const buttonSubmit = document.querySelector('button[type="submit"]');
-  const inputUrl = document.querySelector('#url-input');
-  const formRss = document.querySelector('form');
-
-  buttonSubmit.addEventListener('click', (e) => {
-    e.preventDefault();
-
-    state.formRss.buttonSubmitDisable = true;
-    const { value } = inputUrl;
-
-    schema.validate(value)
-      .then(() => makeRequest(value))
-      .then((response) => {
-        console.log(response.data.contents);
-        const html = makeParse(response.data.contents);
-        makeRSS(html, value);
-        formRss.reset();
-        inputUrl.focus();
-        console.log(state.feeds);
-      })
-      .catch((err) => {
-        console.log(err.message);
-        const error = err.message;
-        state.formRss.errors = i18nInstance.t(`errors.${error}`);
-        // state.formRss.errors = i18nInstance.t(`${error}`);
-        state.formRss.valid = false;
-        state.formRss.buttonSubmitDisable = false;
-      });
-  });
-
-  state.language = 'ru';
 };
