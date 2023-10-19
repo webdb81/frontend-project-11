@@ -1,22 +1,21 @@
 export default {
   translation: {
+    languages: {
+      en: 'English',
+    },
     buttonSubmit: 'Add feed',
-    appTitle: 'RSS aggregator',
-    appLead: 'Start to read RSS today! It\'s simple.',
-    labelUrl: 'RSS link',
-    exampleUrl: 'Example: https://ru.hexlet.io/lessons.rss',
     feedsTitle: 'Feeds',
     postsTitle: 'Posts',
     modalOpen: 'Preview',
     successLoad: 'RSS successfully loaded',
-    modalReadMore: 'Read more',
     modalClose: 'Close',
     errors: {
-      Required: 'The field should not be empty',
+      Required: 'Should not be empty',
       ParsingError: 'Link does not contain valid RSS',
       IncorrectUrl: 'Link must be valid URL',
       RssAlreadyAdded: 'RSS already exists',
       NetworkError: 'Network error',
+      ServicingError: 'Something went wrong',
     },
   },
 };

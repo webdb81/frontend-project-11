@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 import * as yup from 'yup';
 import _ from 'lodash'; //
 import axios from 'axios';
@@ -17,7 +16,10 @@ export default () => {
     },
     modalPost: null,
     viewPosts: [],
-    connectionMode: 'detach',
+    connectionMode: {
+      status: 'standby',
+      error: null,
+    },
   };
 
   const elements = {
@@ -70,9 +72,19 @@ export default () => {
             error: error.message.key,
           };
         } else if (error.isParsingError) {
-          watchedState.formRss = {
-            valid: false,
-            error: 'errors.parsingError',
+          watchedState.connectionMode = {
+            status: 'failed',
+            error: 'errors.ParsingError',
+          };
+        } else if (error.isAxiosError) {
+          watchedState.connectionMode = {
+            status: 'failed',
+            error: 'errors.NetworkError',
+          };
+        } else {
+          watchedState.connectionMode = {
+            status: 'failed',
+            error: 'errors.ServicingError',
           };
         }
       };
@@ -128,7 +140,7 @@ export default () => {
 
         validateUrl(url, existingLinks)
           .then(() => {
-            watchedState.connectionMode = 'load';
+            watchedState.connectionMode = { status: 'load', error: null };
             watchedState.formRss = { valid: true, error: null };
             return axios.get(getProxyUrl(url));
           })
@@ -152,13 +164,14 @@ export default () => {
             watchedState.feeds.unshift(feed);
             watchedState.posts.unshift(...post);
 
-            watchedState.connectionMode = 'detach';
+            watchedState.connectionMode = { status: 'standby', error: null };
             watchedState.formRss = { error: null, valid: true };
           })
           .catch((error) => {
             errorHandler(error);
           });
       });
+
       elements.postsContainer.addEventListener('click', (e) => {
         const { target } = e;
         const id = target.getAttribute('data-id');

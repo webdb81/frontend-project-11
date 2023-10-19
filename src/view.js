@@ -18,11 +18,11 @@ const handlingForm = (initialState, elements, i18n) => {
 };
 
 const handlingFeeds = (initialState, elements, i18n) => {
-  console.log('Feeds:', initialState.feeds);
-  console.log('Posts:', initialState.posts);
+  // console.log('Feeds:', initialState.feeds);
+  // console.log('Posts:', initialState.posts);
   const currentElements = { ...elements };
 
-  currentElements.feedsContainer.innerHTML = '';
+  currentElements.feedsContainer.textContent = '';
   const feedsWrap = document.createElement('div');
   feedsWrap.classList.add('card', 'border-0');
 
@@ -36,12 +36,20 @@ const handlingFeeds = (initialState, elements, i18n) => {
   feedsBody.append(feedsTitle);
 
   const feedsList = document.createElement('ul');
-  feedsList.classList.add('list-group', 'border-0', 'rounded-0');
+  feedsList.classList.add(
+    'list-group',
+    'border-0',
+    'rounded-0',
+  );
   feedsWrap.append(feedsList);
 
   initialState.feeds.forEach((feed) => {
     const feedItem = document.createElement('li');
-    feedItem.classList.add('list-group-item', 'border-0', 'border-end-0');
+    feedItem.classList.add(
+      'list-group-item',
+      'border-0',
+      'border-end-0',
+    );
     feedsList.append(feedItem);
 
     const feedItemTitle = document.createElement('h3');
@@ -49,7 +57,11 @@ const handlingFeeds = (initialState, elements, i18n) => {
     feedItemTitle.textContent = feed.title;
 
     const feedItemText = document.createElement('p');
-    feedItemText.classList.add('m-0', 'small', 'text-black-50');
+    feedItemText.classList.add(
+      'm-0',
+      'small',
+      'text-black-50',
+    );
     feedItemText.textContent = feed.description;
     feedItem.append(feedItemTitle, feedItemText);
   });
@@ -63,7 +75,7 @@ const handlingPosts = (initialState, elements, i18n) => {
   // console.log('Posts:', initialState.posts);
   const currentElements = { ...elements };
 
-  currentElements.postsContainer.innerHTML = '';
+  currentElements.postsContainer.textContent = '';
 
   const postsWrap = document.createElement('div');
   postsWrap.classList.add('card', 'border-0');
@@ -78,7 +90,11 @@ const handlingPosts = (initialState, elements, i18n) => {
   postsBody.append(postsTitle);
 
   const postsList = document.createElement('ul');
-  postsList.classList.add('list-group', 'border-0', 'rounded-0');
+  postsList.classList.add(
+    'list-group',
+    'border-0',
+    'rounded-0',
+  );
   postsWrap.append(postsList);
 
   initialState.posts.forEach((post) => {
@@ -107,7 +123,11 @@ const handlingPosts = (initialState, elements, i18n) => {
 
     const modalOpen = document.createElement('button');
     modalOpen.type = 'button';
-    modalOpen.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    modalOpen.classList.add(
+      'btn',
+      'btn-outline-primary',
+      'btn-sm',
+    );
     modalOpen.setAttribute('data-id', post.id);
     modalOpen.setAttribute('data-bs-toggle', 'modal');
     modalOpen.setAttribute('data-bs-target', '#modal');
@@ -122,15 +142,51 @@ const handlingPosts = (initialState, elements, i18n) => {
 };
 
 const handlingModal = (initialState, elements) => {
-  console.log('ololo');
   const currentElements = { ...elements };
 
-  const postModalPreview = initialState.posts.find((post) => post.id === initialState.modalPost);
+  const postModalPreview = initialState.posts
+    .find((post) => post.id === initialState.modalPost);
 
   currentElements.modalPostLink.setAttribute('href', postModalPreview.link);
   currentElements.modalPostTitle.textContent = postModalPreview.title;
   currentElements.modalPostText.textContent = postModalPreview.description;
 
+  return currentElements;
+};
+
+const handlingConnection = (initialState, elements, i18n) => {
+  const currentElements = { ...elements };
+
+  if (initialState.connectionMode.error) {
+    currentElements.feedback.classList.remove('text-success');
+    currentElements.feedback.classList.add('text-danger');
+    currentElements.feedback.textContent = i18n.t(initialState.connectionMode.error);
+  }
+  switch (initialState.connectionMode.status) {
+    case 'standby': {
+      currentElements.inputUrl.value = '';
+      currentElements.feedback.classList.remove('text-danger');
+      currentElements.feedback.classList.add('text-success');
+      currentElements.feedback.textContent = i18n.t('successLoad');
+      currentElements.inputUrl.classList.remove('is-invalid');
+      currentElements.inputUrl.disabled = false;
+      currentElements.buttonSubmit.disabled = false;
+      break;
+    }
+    case 'load': {
+      currentElements.inputUrl.disabled = true;
+      currentElements.buttonSubmit.disabled = true;
+      break;
+    }
+    case 'failed': {
+      currentElements.inputUrl.classList.add('is-invalid');
+      currentElements.inputUrl.disabled = false;
+      currentElements.buttonSubmit.disabled = false;
+      break;
+    }
+    default:
+      break;
+  }
   return currentElements;
 };
 
@@ -157,8 +213,12 @@ export default (initialState, elements, i18n) => {
         handlingModal(initialState, elements);
         break;
       }
+      case 'connectionMode': {
+        handlingConnection(initialState, elements, i18n);
+        break;
+      }
       default:
-        throw new Error('Something went wrong.');
+        throw new Error('Something went wrong');
     }
   });
 

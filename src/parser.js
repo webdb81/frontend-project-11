@@ -23,7 +23,7 @@ const parser = (RSS) => {
     description: post.querySelector('description').textContent.trim(),
     link: post.querySelector('link').textContent.trim(),
   }));
-  console.log({ rssNodeTitle, rssNodeDescription, posts });
+  // console.log({ rssNodeTitle, rssNodeDescription, posts });
 
   return { rssNodeTitle, rssNodeDescription, posts };
 };
