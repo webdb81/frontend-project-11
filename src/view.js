@@ -18,8 +18,6 @@ const handlingForm = (initialState, elements, i18n) => {
 };
 
 const handlingFeeds = (initialState, elements, i18n) => {
-  // console.log('Feeds:', initialState.feeds);
-  // console.log('Posts:', initialState.posts);
   const currentElements = { ...elements };
 
   currentElements.feedsContainer.textContent = '';
@@ -71,8 +69,6 @@ const handlingFeeds = (initialState, elements, i18n) => {
 };
 
 const handlingPosts = (initialState, elements, i18n) => {
-  //  console.log('Feeds:', initialState.feeds);
-  // console.log('Posts:', initialState.posts);
   const currentElements = { ...elements };
 
   currentElements.postsContainer.textContent = '';

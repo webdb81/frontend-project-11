@@ -45,19 +45,19 @@ export default () => {
     .then(() => {
       yup.setLocale({
         string: {
-          url: { key: 'errors.IncorrectUrl', validationError: true },
+          url: { key: 'errors.incorrectUrl', validationError: true },
         },
         mixed: {
-          required: () => ({ key: 'errros.Required', validationError: true }),
+          required: () => ({ key: 'errros.requiredField', validationError: true }),
           notOneOf: () => ({
-            key: 'errors.RssAlreadyAdded',
+            key: 'errors.rssAlreadyAdded',
             validationError: true,
           }),
         },
       });
 
-      const validateUrl = (url, RssAlreadyAdded) => {
-        const schema = yup.string().required().url().notOneOf(RssAlreadyAdded);
+      const validateUrl = (url, rssAlreadyAdded) => {
+        const schema = yup.string().required().url().notOneOf(rssAlreadyAdded);
 
         return schema.validate(url);
       };
@@ -71,20 +71,20 @@ export default () => {
             valid: false,
             error: error.message.key,
           };
-        } else if (error.isParsingError) {
+        } else if (error.isparsingError) {
           watchedState.connectionMode = {
             status: 'failed',
-            error: 'errors.ParsingError',
+            error: 'errors.parsingError',
           };
         } else if (error.isAxiosError) {
           watchedState.connectionMode = {
             status: 'failed',
-            error: 'errors.NetworkError',
+            error: 'errors.networkError',
           };
         } else {
           watchedState.connectionMode = {
             status: 'failed',
-            error: 'errors.ServicingError',
+            error: 'errors.servicingError',
           };
         }
       };

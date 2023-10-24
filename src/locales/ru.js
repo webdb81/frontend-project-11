@@ -10,12 +10,12 @@ export default {
     successLoad: 'RSS успешно загружен',
     modalClose: 'Закрыть',
     errors: {
-      Required: 'Не должно быть пустым',
-      ParsingError: 'Ресурс не содержит валидный RSS',
-      IncorrectUrl: 'Ссылка должна быть валидным URL',
-      RssAlreadyAdded: 'RSS уже существует',
-      NetworkError: 'Ошибка сети',
-      ServicingError: 'Что-то пошло не так',
+      requiredField: 'Не должно быть пустым',
+      parsingError: 'Ресурс не содержит валидный RSS',
+      incorrectUrl: 'Ссылка должна быть валидным URL',
+      rssAlreadyAdded: 'RSS уже существует',
+      networkError: 'Ошибка сети',
+      servicingError: 'Что-то пошло не так',
     },
   },
 };
