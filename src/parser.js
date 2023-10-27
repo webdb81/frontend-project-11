@@ -1,6 +1,6 @@
-const parser = (RSS) => {
+const parser = (rssInstance) => {
   const parserInstance = new DOMParser();
-  const rssData = parserInstance.parseFromString(RSS, 'text/xml');
+  const rssData = parserInstance.parseFromString(rssInstance, 'application/xml');
 
   const parseError = rssData.querySelector('parsererror');
   if (parseError) {
