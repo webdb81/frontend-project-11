@@ -112,6 +112,7 @@ export default () => {
                 initialState.posts,
                 (a, b) => a.title === b.title,
               );
+
               const updatedPosts = newPosts.map((post) => {
                 const updatedPost = { ...post };
                 updatedPost.id = _.uniqueId();
@@ -119,6 +120,12 @@ export default () => {
                 return updatedPost;
               });
               initialState.posts.unshift(...updatedPosts);
+
+              const updatedNewPosts = newPosts
+                .filter((newPost) => !watchedState.posts
+                  .some((existingPost) => existingPost.title === newPost.title));
+
+              watchedState.posts = [...updatedNewPosts, ...watchedState.posts];
             })
             .catch((error) => {
               console.error(error);
@@ -126,7 +133,7 @@ export default () => {
         });
 
         Promise.all(promises).finally(() => {
-          setTimeout(() => refreshPosts(), refreshPostsInterval);
+          setInterval(refreshPosts, refreshPostsInterval);
         });
       };
 
