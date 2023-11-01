@@ -108,7 +108,7 @@ const handlingPosts = (initialState, elements, i18n) => {
 
     postItemLink.textContent = post.title;
     postItemLink.setAttribute('href', post.link);
-    postItemLink.setAttribute('id', post.id);
+    postItemLink.setAttribute('data-id', post.id);
     postItemLink.setAttribute('target', '_blank');
 
     if (initialState.viewPosts.includes(post.id)) {
